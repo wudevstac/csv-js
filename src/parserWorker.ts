@@ -1,15 +1,22 @@
+import type { ParserConfig } from './types';
 import type { ParserInternalConfig } from './parserInterface';
-import { ParserCore } from './parserCore';
 
 export function parse(
   input: ReadableStream<Uint8Array>,
-  options?: ParserInternalConfig,
+  options?: ParserConfig,
 ): ReadableStream<string[]> {
   const abortController = new AbortController();
   const signal = abortController.signal;
-
   return new ReadableStream<string[]>({
     async start(controller) {
+      const worker = new Worker(new URL('./parserWorker.worker.ts', import.meta.url), {
+        type: 'module',
+      });
+
+      signal.addEventListener('abort', () => {
+        worker.postMessage('abort');
+      });
+
       const writableStream = new WritableStream<string[]>({
         write: (chunk) => {
           controller.enqueue(chunk);
@@ -22,31 +29,22 @@ export function parse(
         },
       });
 
-      const writer = writableStream.getWriter();
-
-      const decoder = new TextDecoderStream();
-
-      const parserOptions: ParserInternalConfig = {
-        delimiter: options?.delimiter,
-        newline: options?.newline,
-        comments: options?.comments,
-        limit: options?.limit,
-        fast: options?.fast,
-        quoteChar: options?.quoteChar,
-        escapeChar: options?.escapeChar,
-        stream: writer,
-      };
-
-      const parser = new ParserCore(parserOptions);
-
-      input.pipeTo(decoder.writable, { signal });
-      for await (const chunk of decoder.readable) {
-        parser.parse(chunk, false, signal);
-      }
-      await writer.close();
+      worker.postMessage({
+        options: {
+          delimiter: options?.delimiter,
+          newline: options?.newline,
+          comments: options?.comments,
+          limit: options?.limit,
+          fast: options?.fast,
+          quoteChar: options?.quoteChar,
+          escapeChar: options?.escapeChar,
+        } as ParserInternalConfig,
+        input: input,
+        writableStream,
+      }, [input, writableStream])
     },
     cancel() {
       abortController.abort();
-    },
+    }
   });
 }
