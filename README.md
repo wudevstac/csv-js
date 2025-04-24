@@ -1,11 +1,11 @@
-# Rslib project
+# CSV.js
 
 ## Setup
 
 Install the dependencies:
 
 ```bash
-pnpm install
+npm install
 ```
 
 ## Get started
@@ -13,11 +13,11 @@ pnpm install
 Build the library:
 
 ```bash
-pnpm build
+npm run build
 ```
 
 Build the library in watch mode:
 
 ```bash
-pnpm dev
+npm run dev
 ```
