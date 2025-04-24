@@ -1,5 +1,5 @@
-export const RECORD_SEP = String.fromCharCode(30);
-export const UNIT_SEP = String.fromCharCode(31);
+export const RECORD_SEP = '\x1E';
+export const UNIT_SEP = '\x1F';
 export const BYTE_ORDER_MARK = '\ufeff';
 export const BAD_DELIMITERS = ['\r', '\n', '"', BYTE_ORDER_MARK];
 export const NODE_STREAM_INPUT = 1;
